@@ -1,0 +1,11 @@
+/.idea/
+/README.md
+/node_modules/
+/dist/
+node_modules/
+dist/
+.astro/
+.DS_Store
+.env
+.env.*
+!.env.example

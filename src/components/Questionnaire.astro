@@ -1,26 +1,228 @@
 ---
 import { questions } from "../data/questions";
+import { SURVEY_ENDPOINT } from "../config/survey";
 ---
 <div class="shell">
-<header><small>VTC CUSTOMER RESEARCH</small><h1>Comment les VTC développent-ils leur clientèle ?</h1><p>Questionnaire anonyme · 3 à 5 minutes</p></header>
-<div class="progress"><span id="section"></span><span id="count"></span><div><i id="bar"></i></div></div>
-<form id="form">
-{questions.map((q,i)=><section class:list={["q",i===0?"active":""]} data-i={i} data-section={q.section}>
-<small>QUESTION {i+1}</small><h2>{q.title}</h2>
-{q.type==="single"&&<div class="options">{q.options?.map(o=><label><input type="radio" name={q.id} value={o} required={q.required===true}/><span>{o}</span></label>)}</div>}
-{q.type==="multi"&&<div class="options">{q.options?.map(o=><label><input type="checkbox" name={q.id} value={o}/><span>{o}</span></label>)}</div>}
-{q.type==="text"&&<textarea name={q.id} rows="6" required={q.required===true} placeholder="Votre réponse..."></textarea>}
-<nav>{i>0&&<button type="button" class="back">← Retour</button>}{i<questions.length-1?<button type="button" class="next">Continuer →</button>:<button type="submit">Envoyer mes réponses</button>}</nav>
-</section>)}
-</form>
-<div id="done"><b>✓</b><h2>Merci pour votre réponse !</h2><p>Votre retour nous aide à comprendre les besoins réels des chauffeurs VTC.</p></div>
-<footer>Étude de découverte produit · France</footer>
+  <header>
+    <small>VTC CUSTOMER RESEARCH</small>
+    <h1>Comment les VTC développent-ils leur clientèle ?</h1>
+    <p>Questionnaire anonyme · 3 à 5 minutes</p>
+  </header>
+
+  <div class="progress" aria-live="polite">
+    <span id="section"></span>
+    <span id="count"></span>
+    <div><i id="bar"></i></div>
+  </div>
+
+  <form id="form">
+    {questions.map((q, i) => (
+      <section class:list={["q", i === 0 ? "active" : ""]} data-i={i} data-section={q.section}>
+        <small>QUESTION {i + 1}</small>
+        <h2>{q.title}</h2>
+
+        {q.type === "single" && (
+          <div class="options">
+            {q.options?.map((o) => (
+              <label>
+                <input type="radio" name={q.id} value={o} required={q.required === true} />
+                <span>{o}</span>
+              </label>
+            ))}
+          </div>
+        )}
+
+        {q.type === "multi" && (
+          <div class="options" data-multi={q.required === true ? "required" : "optional"}>
+            {q.options?.map((o) => (
+              <label>
+                <input type="checkbox" name={q.id} value={o} />
+                <span>{o}</span>
+              </label>
+            ))}
+          </div>
+        )}
+
+        {q.type === "text" && (
+          <textarea name={q.id} rows="6" required={q.required === true} placeholder="Votre réponse..."></textarea>
+        )}
+
+        <nav>
+          {i > 0 && <button type="button" class="back">← Retour</button>}
+          {i < questions.length - 1 ? (
+            <button type="button" class="next">Continuer →</button>
+          ) : (
+            <button type="submit">Envoyer mes réponses</button>
+          )}
+        </nav>
+      </section>
+    ))}
+
+    <input
+      class="honeypot"
+      type="text"
+      name="website"
+      tabindex="-1"
+      autocomplete="off"
+      aria-hidden="true"
+    />
+  </form>
+
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <div id="done">
+    <b>✓</b>
+    <h2>Merci pour votre réponse !</h2>
+    <p>Votre retour nous aide à comprendre les besoins réels des chauffeurs VTC.</p>
+  </div>
+
+  <footer>Étude de découverte produit · France</footer>
 </div>
-<script>
-const qs=[...document.querySelectorAll(".q")],bar=document.querySelector("#bar"),count=document.querySelector("#count"),sec=document.querySelector("#section");let n=0;
-function show(i){qs.forEach((q,j)=>q.classList.toggle("active",i===j));n=i;bar.style.width=((i+1)/qs.length*100)+"%";count.textContent=(i+1)+" / "+qs.length;sec.textContent=qs[i].dataset.section;scrollTo({top:0,behavior:"smooth"})}
-function valid(q){for(const x of q.querySelectorAll("[required]")){if(x.type==="radio"){if(!q.querySelector('input[name="'+x.name+'"]:checked'))return false}else if(!x.value.trim())return false}return true}
-document.querySelectorAll(".next").forEach(b=>b.onclick=()=>{if(!valid(qs[n]))return alert("Merci de compléter cette question.");show(n+1)});
-document.querySelectorAll(".back").forEach(b=>b.onclick=()=>show(n-1));
-document.querySelector("#form").onsubmit=e=>{e.preventDefault();if(!valid(qs[n]))return alert("Merci de compléter cette question.");console.log(Object.fromEntries(new FormData(e.target)));e.target.style.display="none";document.querySelector(".progress").style.display="none";document.querySelector("#done").classList.add("active");scrollTo({top:0,behavior:"smooth"})};show(0);
+
+<script define:vars={{ surveyEndpoint: SURVEY_ENDPOINT, clientQuestions: questions }}>
+  const qs = [...document.querySelectorAll(".q")];
+  const bar = document.querySelector("#bar");
+  const count = document.querySelector("#count");
+  const sec = document.querySelector("#section");
+  const form = document.querySelector("#form");
+  const done = document.querySelector("#done");
+  const status = document.querySelector("#status");
+  const progress = document.querySelector(".progress");
+  let n = 0;
+
+  function show(i) {
+    qs.forEach((q, j) => q.classList.toggle("active", i === j));
+    n = i;
+    bar.style.width = ((i + 1) / qs.length * 100) + "%";
+    count.textContent = (i + 1) + " / " + qs.length;
+    sec.textContent = qs[i].dataset.section;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function valid(q) {
+    for (const input of q.querySelectorAll("[required]")) {
+      if (input.type === "radio") {
+        if (!q.querySelector(`input[name="${input.name}"]:checked`)) return false;
+      } else if (!String(input.value || "").trim()) {
+        return false;
+      }
+    }
+
+    const requiredMulti = q.querySelector('.options[data-multi="required"]');
+    if (requiredMulti && !requiredMulti.querySelector('input[type="checkbox"]:checked')) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function setStatus(message = "", error = false) {
+    status.textContent = message;
+    status.classList.toggle("error", error);
+  }
+
+  document.querySelectorAll(".next").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!valid(qs[n])) {
+        setStatus("Merci de compléter cette question.", true);
+        return;
+      }
+      setStatus();
+      show(n + 1);
+    });
+  });
+
+  document.querySelectorAll(".back").forEach((button) => {
+    button.addEventListener("click", () => {
+      setStatus();
+      show(n - 1);
+    });
+  });
+
+  function buildPayload() {
+    const payload = {};
+
+    for (const question of clientQuestions) {
+      const inputs = [...form.querySelectorAll(`[name="${question.id}"]`)];
+
+      if (question.type === "multi") {
+        payload[question.id] = inputs
+          .filter((input) => input.checked)
+          .map((input) => input.value);
+      } else if (question.type === "text") {
+        payload[question.id] = inputs[0]?.value?.trim() ?? "";
+      } else {
+        const input = inputs.find((candidate) => candidate.checked);
+        payload[question.id] = input?.value ?? "";
+      }
+    }
+
+    payload.website = form.querySelector('[name="website"]').value;
+    return payload;
+  }
+
+  function validatePayload(payload) {
+    const missing = clientQuestions
+      .filter((question) => question.required)
+      .filter((question) => {
+        const value = payload[question.id];
+        return value === "" || value === undefined || value === null ||
+          (Array.isArray(value) && value.length === 0);
+      })
+      .map((question) => question.id);
+
+    if (missing.length > 0) {
+      throw new Error(`Réponses obligatoires manquantes : ${missing.join(", ")}`);
+    }
+  }
+
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!valid(qs[n])) {
+      setStatus("Merci de compléter cette question.", true);
+      return;
+    }
+
+    if (!surveyEndpoint || surveyEndpoint.includes("PASTE_YOUR_")) {
+      setStatus("Le questionnaire n'est pas encore configuré. Contactez-nous.", true);
+      return;
+    }
+
+    const payload = buildPayload();
+    validatePayload(payload);
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = "Envoi en cours…";
+    setStatus("Envoi de votre réponse…");
+
+    try {
+      const response = await fetch(surveyEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "La réponse n'a pas pu être enregistrée.");
+      }
+
+      form.style.display = "none";
+      progress.style.display = "none";
+      status.style.display = "none";
+      done.classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      console.error("Survey submission failed", error);
+      setStatus("Impossible d'enregistrer votre réponse. Vérifiez votre connexion puis réessayez.", true);
+      submitButton.disabled = false;
+      submitButton.textContent = "Réessayer l'envoi";
+    }
+  });
+
+  show(0);
 </script>
