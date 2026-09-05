@@ -1,0 +1,26 @@
+---
+import { questions } from "../data/questions";
+---
+<div class="shell">
+<header><small>VTC CUSTOMER RESEARCH</small><h1>Comment les VTC développent-ils leur clientèle ?</h1><p>Questionnaire anonyme · 3 à 5 minutes</p></header>
+<div class="progress"><span id="section"></span><span id="count"></span><div><i id="bar"></i></div></div>
+<form id="form">
+{questions.map((q,i)=><section class:list={["q",i===0?"active":""]} data-i={i} data-section={q.section}>
+<small>QUESTION {i+1}</small><h2>{q.title}</h2>
+{q.type==="single"&&<div class="options">{q.options?.map(o=><label><input type="radio" name={q.id} value={o} required={q.required===true}/><span>{o}</span></label>)}</div>}
+{q.type==="multi"&&<div class="options">{q.options?.map(o=><label><input type="checkbox" name={q.id} value={o}/><span>{o}</span></label>)}</div>}
+{q.type==="text"&&<textarea name={q.id} rows="6" required={q.required===true} placeholder="Votre réponse..."></textarea>}
+<nav>{i>0&&<button type="button" class="back">← Retour</button>}{i<questions.length-1?<button type="button" class="next">Continuer →</button>:<button type="submit">Envoyer mes réponses</button>}</nav>
+</section>)}
+</form>
+<div id="done"><b>✓</b><h2>Merci pour votre réponse !</h2><p>Votre retour nous aide à comprendre les besoins réels des chauffeurs VTC.</p></div>
+<footer>Étude de découverte produit · France</footer>
+</div>
+<script>
+const qs=[...document.querySelectorAll(".q")],bar=document.querySelector("#bar"),count=document.querySelector("#count"),sec=document.querySelector("#section");let n=0;
+function show(i){qs.forEach((q,j)=>q.classList.toggle("active",i===j));n=i;bar.style.width=((i+1)/qs.length*100)+"%";count.textContent=(i+1)+" / "+qs.length;sec.textContent=qs[i].dataset.section;scrollTo({top:0,behavior:"smooth"})}
+function valid(q){for(const x of q.querySelectorAll("[required]")){if(x.type==="radio"){if(!q.querySelector('input[name="'+x.name+'"]:checked'))return false}else if(!x.value.trim())return false}return true}
+document.querySelectorAll(".next").forEach(b=>b.onclick=()=>{if(!valid(qs[n]))return alert("Merci de compléter cette question.");show(n+1)});
+document.querySelectorAll(".back").forEach(b=>b.onclick=()=>show(n-1));
+document.querySelector("#form").onsubmit=e=>{e.preventDefault();if(!valid(qs[n]))return alert("Merci de compléter cette question.");console.log(Object.fromEntries(new FormData(e.target)));e.target.style.display="none";document.querySelector(".progress").style.display="none";document.querySelector("#done").classList.add("active");scrollTo({top:0,behavior:"smooth"})};show(0);
+</script>
